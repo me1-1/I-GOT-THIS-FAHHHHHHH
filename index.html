@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Last Torch Dungeon</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="game-wrap" aria-label="Last Torch Dungeon game">
+      <canvas id="game" width="960" height="640"></canvas>
+      <div class="scanlines"></div>
+    </section>
+
+    <aside class="panel" aria-label="Game status and controls">
+      <h1>Last Torch Dungeon</h1>
+      <div class="stat-grid">
+        <div><span>Mode</span><strong id="mode">Town</strong></div>
+        <div><span>Floor</span><strong id="floor">0</strong></div>
+        <div><span>HP</span><strong id="hp">100</strong></div>
+        <div><span>Shield</span><strong id="shield">0</strong></div>
+        <div><span>Weapon</span><strong id="weapon">Rusty Sword</strong></div>
+        <div><span>Ammo</span><strong id="ammo">-</strong></div>
+        <div><span>Coins</span><strong id="coins">0</strong></div>
+        <div><span>Skill Pts</span><strong id="skillPoints">0</strong></div>
+        <div><span>Boss</span><strong id="boss">-</strong></div>
+      </div>
+
+      <div class="bar-label">Health</div>
+      <div class="bar"><i id="hpBar"></i></div>
+      <div class="bar-label">Reload</div>
+      <div class="bar"><i id="reloadBar"></i></div>
+
+      <div class="log" id="log" aria-live="polite"></div>
+
+      <div class="skills">
+        <h2>Skill Tree</h2>
+        <button type="button" data-skill="vigor"><span>Vigor</span><small id="skill-vigor">0/3</small></button>
+        <button type="button" data-skill="blade"><span>Blade</span><small id="skill-blade">0/3</small></button>
+        <button type="button" data-skill="guns"><span>Guns</span><small id="skill-guns">0/3</small></button>
+        <button type="button" data-skill="guard"><span>Guard</span><small id="skill-guard">0/3</small></button>
+      </div>
+
+      <div class="keys">
+        <h2>Controls</h2>
+        <p><kbd>WASD</kbd> / <kbd>Arrows</kbd> Move</p>
+        <p><kbd>Mouse</kbd> Aim</p>
+        <p><kbd>Space</kbd> or <kbd>Click</kbd> Shoot</p>
+        <p><kbd>F</kbd> Attack</p>
+        <p><kbd>Shift</kbd> Block</p>
+        <p><kbd>E</kbd> Interact</p>
+        <p><kbd>1-4</kbd> Skills</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
