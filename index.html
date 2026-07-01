@@ -4,13 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Last Torch Dungeon</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=mobile">
 </head>
 <body>
   <main class="shell">
+    <nav class="mode-tabs" aria-label="Control mode">
+      <button type="button" id="desktopMode" class="active">Desktop</button>
+      <button type="button" id="mobileMode">Mobile</button>
+    </nav>
+
     <section class="game-wrap" aria-label="Last Torch Dungeon game">
       <canvas id="game" width="960" height="640"></canvas>
       <div class="scanlines"></div>
+
+      <div class="mobile-controls" id="mobileControls" aria-label="Mobile controls">
+        <div class="joystick" id="joystick" aria-label="Move">
+          <i id="joystickKnob"></i>
+        </div>
+        <div class="touch-actions">
+          <button type="button" id="mobileInteract">...</button>
+          <button type="button" id="mobileAttack">ATK</button>
+        </div>
+      </div>
     </section>
 
     <aside class="panel" aria-label="Game status and controls">
@@ -22,6 +37,9 @@
         <div><span>Shield</span><strong id="shield">0</strong></div>
         <div><span>Weapon</span><strong id="weapon">Rusty Sword</strong></div>
         <div><span>Ammo</span><strong id="ammo">-</strong></div>
+        <div><span>Vehicle</span><strong id="vehicle">On Foot</strong></div>
+        <div><span>Armor</span><strong id="armor">0</strong></div>
+        <div><span>Allies</span><strong id="allies">0</strong></div>
         <div><span>Coins</span><strong id="coins">0</strong></div>
         <div><span>Skill Pts</span><strong id="skillPoints">0</strong></div>
         <div><span>Boss</span><strong id="boss">-</strong></div>
@@ -35,11 +53,11 @@
       <div class="log" id="log" aria-live="polite"></div>
 
       <div class="skills">
-        <h2>Skill Tree</h2>
-        <button type="button" data-skill="vigor"><span>Vigor</span><small id="skill-vigor">0/3</small></button>
-        <button type="button" data-skill="blade"><span>Blade</span><small id="skill-blade">0/3</small></button>
-        <button type="button" data-skill="guns"><span>Guns</span><small id="skill-guns">0/3</small></button>
-        <button type="button" data-skill="guard"><span>Guard</span><small id="skill-guard">0/3</small></button>
+        <h2>Run Upgrades</h2>
+        <button type="button" data-skill="speed"><span>Speed</span><small id="skill-speed">0</small></button>
+        <button type="button" data-skill="firerate"><span>Fire Rate</span><small id="skill-firerate">0</small></button>
+        <button type="button" data-skill="damage"><span>Damage</span><small id="skill-damage">0</small></button>
+        <button type="button" data-skill="health"><span>Health</span><small id="skill-health">0</small></button>
       </div>
 
       <div class="keys">

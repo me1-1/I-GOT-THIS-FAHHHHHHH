@@ -1,5 +1,6 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
 const ui = {
   mode: document.getElementById("mode"),
@@ -8,17 +9,27 @@ const ui = {
   shield: document.getElementById("shield"),
   weapon: document.getElementById("weapon"),
   ammo: document.getElementById("ammo"),
+  vehicle: document.getElementById("vehicle"),
+  armor: document.getElementById("armor"),
+  allies: document.getElementById("allies"),
   coins: document.getElementById("coins"),
   skillPoints: document.getElementById("skillPoints"),
   boss: document.getElementById("boss"),
   hpBar: document.getElementById("hpBar"),
   reloadBar: document.getElementById("reloadBar"),
   log: document.getElementById("log"),
+  desktopMode: document.getElementById("desktopMode"),
+  mobileMode: document.getElementById("mobileMode"),
+  mobileControls: document.getElementById("mobileControls"),
+  joystick: document.getElementById("joystick"),
+  joystickKnob: document.getElementById("joystickKnob"),
+  mobileAttack: document.getElementById("mobileAttack"),
+  mobileInteract: document.getElementById("mobileInteract"),
   skillLabels: {
-    vigor: document.getElementById("skill-vigor"),
-    blade: document.getElementById("skill-blade"),
-    guns: document.getElementById("skill-guns"),
-    guard: document.getElementById("skill-guard"),
+    speed: document.getElementById("skill-speed"),
+    firerate: document.getElementById("skill-firerate"),
+    damage: document.getElementById("skill-damage"),
+    health: document.getElementById("skill-health"),
   },
   skillButtons: Array.from(document.querySelectorAll("[data-skill]")),
 };
@@ -34,23 +45,69 @@ const weapons = [
   { name: "Rusty Sword", type: "melee", damage: 18, cooldown: 320, range: 42, minFloor: 1, price: 6 },
   { name: "Hunter Bow", type: "ranged", damage: 22, cooldown: 420, range: 420, mag: 1, ammo: 24, reload: 760, speed: 8, minFloor: 1, price: 9 },
   { name: "Flintlock Pistol", type: "ranged", damage: 44, cooldown: 620, range: 360, mag: 1, ammo: 16, reload: 1200, speed: 10, minFloor: 2, price: 14 },
+  { name: "Burst SMG", type: "ranged", damage: 9, cooldown: 55, range: 340, mag: 32, ammo: 128, reload: 1250, speed: 12, minFloor: 2, price: 24 },
   { name: "Pump Shotgun", type: "ranged", damage: 18, cooldown: 720, range: 260, mag: 5, ammo: 30, reload: 1350, speed: 9, pellets: 6, spread: 0.28, minFloor: 2, price: 20 },
   { name: "AR-15 Assault Rifle", type: "ranged", damage: 15, cooldown: 95, range: 500, mag: 24, ammo: 96, reload: 1500, speed: 13, minFloor: 3, price: 30 },
+  { name: "Grenade Launcher", type: "ranged", damage: 46, cooldown: 860, range: 380, mag: 4, ammo: 16, reload: 1650, speed: 6, splash: 88, minFloor: 4, price: 36 },
+  { name: "Laser Carbine", type: "ranged", damage: 28, cooldown: 180, range: 560, mag: 18, ammo: 90, reload: 1100, speed: 15, minFloor: 5, price: 48 },
   { name: "Rocket Launcher", type: "ranged", damage: 72, cooldown: 980, range: 460, mag: 1, ammo: 8, reload: 1700, speed: 7, splash: 76, minFloor: 5, price: 42 },
   { name: "Moonsteel Blade", type: "melee", damage: 36, cooldown: 250, range: 52, minFloor: 4, price: 34 },
+  { name: "Plasma Cannon", type: "ranged", damage: 64, cooldown: 520, range: 520, mag: 6, ammo: 36, reload: 1900, speed: 9, splash: 54, minFloor: 7, price: 64 },
 ];
 
-const skillNames = ["vigor", "blade", "guns", "guard"];
+const skillNames = ["speed", "firerate", "damage", "health"];
 const saveKey = "lastTorchDungeonSave";
 const weaponByName = Object.fromEntries(weapons.map((weapon) => [weapon.name, weapon]));
+
+const vehicles = [
+  { name: "On Foot", price: 0, speed: 0, armor: 0, color: "#ffffff", tier: "Base" },
+  { name: "Scrap Bike", price: 18, speed: 0.65, armor: 8, color: "#aa5500", tier: "Common" },
+  { name: "Dungeon Kart", price: 32, speed: 0.4, armor: 24, color: "#5555ff", tier: "Common" },
+  { name: "War Buggy", price: 55, speed: 0.85, armor: 38, color: "#aaaaaa", tier: "Uncommon" },
+  { name: "Humvee Turret", price: 0, speed: 0.45, armor: 70, color: "#00aa00", tier: "Common" },
+  { name: "APC Carrier", price: 0, speed: 0.25, armor: 120, color: "#555555", tier: "Rare" },
+  { name: "Siege Tank", price: 0, speed: -0.15, armor: 220, color: "#55ff55", tier: "Legendary" },
+  { name: "A-10 Close Air Support", price: 0, speed: 1.15, armor: 85, color: "#55ffff", tier: "Mythic" },
+];
+const vehicleByName = Object.fromEntries(vehicles.map((vehicle) => [vehicle.name, vehicle]));
 
 const shopStock = [
   { label: "Bladesmith", x: 220, y: 220, weapon: "Rusty Sword" },
   { label: "Bowyer", x: 355, y: 220, weapon: "Hunter Bow" },
   { label: "Gunsmith", x: 500, y: 220, weapon: "Flintlock Pistol" },
-  { label: "Shotgunner", x: 650, y: 220, weapon: "Pump Shotgun" },
-  { label: "Armory", x: 635, y: 420, weapon: "AR-15 Assault Rifle" },
-  { label: "Demolition", x: 780, y: 420, weapon: "Rocket Launcher" },
+  { label: "SMG Rack", x: 645, y: 220, weapon: "Burst SMG" },
+  { label: "Shotgunner", x: 790, y: 220, weapon: "Pump Shotgun" },
+  { label: "Armory", x: 575, y: 420, weapon: "AR-15 Assault Rifle" },
+  { label: "Grenadier", x: 715, y: 420, weapon: "Grenade Launcher" },
+  { label: "Demolition", x: 850, y: 420, weapon: "Rocket Launcher" },
+  { label: "Laser Lab", x: 990, y: 420, weapon: "Laser Carbine" },
+  { label: "Plasma Bay", x: 1135, y: 420, weapon: "Plasma Cannon" },
+];
+
+const vehicleStock = [
+  { label: "Bike Shop", x: 195, y: 515, vehicle: "Scrap Bike" },
+  { label: "Kart Bay", x: 345, y: 515, vehicle: "Dungeon Kart" },
+  { label: "Buggy Dock", x: 500, y: 515, vehicle: "War Buggy" },
+];
+
+const allyTypes = {
+  peasant: { name: "Peasant Ally", price: 5, hp: 32, speed: 1.65, damage: 9, range: 220, cooldown: 620, color: "#ffff55", weapon: "Knife/Bow" },
+  survivor: { name: "Armed Survivor", price: 12, hp: 46, speed: 1.8, damage: 18, range: 300, cooldown: 780, color: "#55ffff", weapon: "Flintlock" },
+  soldier: { name: "Soldier", price: 24, hp: 70, speed: 1.9, damage: 15, range: 380, cooldown: 210, color: "#55ff55", weapon: "AR/Shotgun/RPG" },
+};
+
+const vehicleAllyTypes = {
+  humvee: { name: "Humvee Turret", hp: 95, speed: 1.65, damage: 12, range: 360, cooldown: 130, color: "#00aa00", r: 18, tier: "Common" },
+  apc: { name: "APC Carrier", hp: 150, speed: 1.18, damage: 26, range: 400, cooldown: 260, color: "#555555", r: 22, tier: "Rare" },
+  tank: { name: "Siege Tank", hp: 260, speed: 0.78, damage: 74, range: 430, cooldown: 1050, splash: 82, color: "#55ff55", r: 26, tier: "Legendary" },
+  a10: { name: "A-10 Close Air Support", hp: 120, speed: 2.45, damage: 10, range: 560, cooldown: 45, splash: 0, bombDamage: 110, bombSplash: 120, bombCooldown: 30000, flying: true, color: "#55ffff", r: 20, tier: "Mythic" },
+};
+
+const recruitSites = [
+  { label: "Run-down Shack", x: 205, y: 95, recruit: "peasant" },
+  { label: "Police Station", x: 405, y: 95, recruit: "survivor" },
+  { label: "Barracks", x: 620, y: 95, recruit: "soldier" },
+  { label: "Vehicle Depot", x: 830, y: 95, depot: true },
 ];
 
 function loadSave() {
@@ -59,9 +116,10 @@ function loadSave() {
     return {
       coins: Number.isFinite(saved.coins) ? saved.coins : 0,
       ownedWeapons: Array.isArray(saved.ownedWeapons) ? saved.ownedWeapons : ["Pocket Knife"],
+      ownedVehicles: Array.isArray(saved.ownedVehicles) ? saved.ownedVehicles : ["On Foot"],
     };
   } catch {
-    return { coins: 0, ownedWeapons: ["Pocket Knife"] };
+    return { coins: 0, ownedWeapons: ["Pocket Knife"], ownedVehicles: ["On Foot"] };
   }
 }
 
@@ -72,6 +130,7 @@ const state = {
   floor: 0,
   keys: new Set(),
   mouse: { x: VIEW_W / 2, y: VIEW_H / 2, down: false },
+  mobile: { enabled: false, joyX: 0, joyY: 0, activePointer: null },
   camera: { x: 0, y: 0 },
   map: [],
   entities: [],
@@ -91,8 +150,12 @@ const state = {
     maxShield: 42,
     coins: saveData.coins,
     ownedWeapons: new Set(["Pocket Knife", ...saveData.ownedWeapons]),
+    ownedVehicles: new Set(["On Foot", ...saveData.ownedVehicles]),
+    vehicle: vehicles[0],
+    armor: 0,
+    allies: [],
     skillPoints: 0,
-    skills: { vigor: 0, blade: 0, guns: 0, guard: 0 },
+    skills: { speed: 0, firerate: 0, damage: 0, health: 0 },
     weapon: { ...weapons[0], clip: 0, reserve: 0, reloading: 0 },
     attackCd: 0,
     invuln: 0,
@@ -101,16 +164,16 @@ const state = {
 };
 
 const colors = {
-  wall: "#262615",
-  floor: "#15170f",
-  townGrass: "#19331c",
-  townPath: "#51482a",
-  player: "#63e6ff",
-  monster: "#ff5a4f",
-  chest: "#d99b35",
-  potion: "#e84870",
-  exit: "#8be06a",
-  npc: "#ffd35a",
+  wall: "#000000",
+  floor: "#0000aa",
+  townGrass: "#00aa00",
+  townPath: "#aa5500",
+  player: "#ffffff",
+  monster: "#ff5555",
+  chest: "#ffff55",
+  potion: "#ff55ff",
+  exit: "#55ff55",
+  npc: "#55ffff",
 };
 
 function log(text) {
@@ -139,25 +202,21 @@ function cloneWeapon(weapon) {
 }
 
 function meleeDamage() {
-  return Math.round(state.player.weapon.damage * (1 + state.player.skills.blade * 0.18));
+  return Math.round(state.player.weapon.damage * (1 + state.player.skills.damage * 0.12));
 }
 
 function rangedDamage(base) {
-  return Math.round(base * (1 + state.player.skills.guns * 0.14));
+  return Math.round(base * (1 + state.player.skills.damage * 0.12));
 }
 
 function spendSkill(name) {
   const p = state.player;
-  if (!skillNames.includes(name) || p.skills[name] >= 3 || p.skillPoints <= 0) return;
+  if (!skillNames.includes(name) || p.skillPoints <= 0) return;
   p.skillPoints -= 1;
   p.skills[name] += 1;
-  if (name === "vigor") {
-    p.maxHp += 18;
-    p.hp += 18;
-  }
-  if (name === "guard") {
-    p.maxShield += 10;
-    p.shield = Math.min(p.maxShield, p.shield + 10);
+  if (name === "health") {
+    p.maxHp += 14;
+    p.hp += 14;
   }
   log(`${name.toUpperCase()} upgraded.`);
 }
@@ -167,6 +226,7 @@ function saveProgress() {
     localStorage.setItem(saveKey, JSON.stringify({
       coins: state.player.coins,
       ownedWeapons: Array.from(state.player.ownedWeapons),
+      ownedVehicles: Array.from(state.player.ownedVehicles),
     }));
   } catch {
     // Progress still works for the current play session if storage is unavailable.
@@ -198,13 +258,146 @@ function buyOrEquipWeapon(weaponName) {
   log(`Bought ${weapon.name} for ${weapon.price} coins.`);
 }
 
-function resetForTown() {
+function buyOrEquipVehicle(vehicleName) {
   const p = state.player;
+  const vehicle = vehicleByName[vehicleName];
+  if (!vehicle) return;
+  if (p.ownedVehicles.has(vehicle.name)) {
+    p.vehicle = vehicle;
+    p.armor = Math.max(p.armor, vehicle.armor);
+    log(`${vehicle.name} is ready for this run.`);
+    return;
+  }
+  if (p.coins < vehicle.price) {
+    log(`${vehicle.name} costs ${vehicle.price} coins. You have ${p.coins}.`);
+    return;
+  }
+  p.coins -= vehicle.price;
+  p.ownedVehicles.add(vehicle.name);
+  p.vehicle = vehicle;
+  p.armor = Math.max(p.armor, vehicle.armor);
+  saveProgress();
+  log(`Unlocked ${vehicle.name} for ${vehicle.price} coins.`);
+}
+
+function rollVehicleDepot() {
+  const p = state.player;
+  const price = 35;
+  if (p.coins < price) {
+    log(`Vehicle depot roll costs ${price} coins.`);
+    return;
+  }
+  p.coins -= price;
+  const roll = Math.random();
+  const vehicleType = roll < 0.62
+    ? "humvee"
+    : roll < 0.87
+      ? "apc"
+      : roll < 0.98
+        ? "tank"
+        : "a10";
+  const vehicle = vehicleAllyTypes[vehicleType];
+  saveProgress();
+  spawnVehicleAlly(vehicleType);
+  log(`${vehicle.tier} depot roll: ${vehicle.name} joined your squad.`);
+}
+
+function spawnVehicleAlly(type) {
+  const spec = vehicleAllyTypes[type];
+  const p = state.player;
+  if (!spec) return;
+  const spot = allyFormationPoint(p.allies.length, spec.r);
+  p.allies.push({
+    ...spec,
+    type,
+    vehicleAlly: true,
+    x: spot.x,
+    y: spot.y,
+    r: spec.r,
+    maxHp: spec.hp,
+    hp: spec.hp,
+    attackCd: 0,
+    bombCd: spec.bombCooldown || 0,
+    facing: 0,
+  });
+}
+
+function recruitAlly(type) {
+  const spec = allyTypes[type];
+  const p = state.player;
+  if (!spec) return;
+  if (p.coins < spec.price) {
+    log(`${spec.name} costs ${spec.price} coins.`);
+    return;
+  }
+  p.coins -= spec.price;
+  saveProgress();
+  const spot = allyFormationPoint(p.allies.length, 11);
+  p.allies.push({
+    ...spec,
+    type,
+    x: spot.x,
+    y: spot.y,
+    r: 11,
+    maxHp: spec.hp,
+    hp: spec.hp,
+    attackCd: 0,
+    facing: 0,
+  });
+  log(`${spec.name} joined the run.`);
+}
+
+function buyArmor() {
+  const p = state.player;
+  const price = 8 + Math.floor(p.armor / 12);
+  if (p.coins < price) {
+    log(`Armor plating costs ${price} coins.`);
+    return;
+  }
+  p.coins -= price;
+  p.armor += 18;
+  saveProgress();
+  log(`Bought armor plating. Armor is now ${p.armor}.`);
+}
+
+function buyAmmo() {
+  const p = state.player;
+  if (p.weapon.type !== "ranged") {
+    log("Equip a ranged weapon before buying ammo.");
+    return;
+  }
+  const price = Math.max(4, Math.ceil(p.weapon.mag / 3));
+  if (p.coins < price) {
+    log(`Ammo costs ${price} coins.`);
+    return;
+  }
+  p.coins -= price;
+  p.weapon.reserve += Math.max(p.weapon.mag * 2, 12);
+  saveProgress();
+  log(`Bought ammo for ${p.weapon.name}.`);
+}
+
+function resetRunBuild() {
+  const p = state.player;
+  p.maxHp = 100;
   p.hp = p.maxHp;
-  p.shield = Math.min(p.maxShield, Math.max(18, p.shield));
+  p.maxShield = 42;
+  p.shield = 18;
+  p.armor = 0;
+  p.allies = [];
+  p.skillPoints = 0;
+  p.skills = { speed: 0, firerate: 0, damage: 0, health: 0 };
+  p.vehicle = vehicles[0];
   p.attackCd = 0;
   p.invuln = 0;
   p.weapon = cloneWeapon(weapons[0]);
+}
+
+function resetForTown() {
+  const p = state.player;
+  resetRunBuild();
+  p.attackCd = 0;
+  p.invuln = 0;
 }
 
 function makeEmptyMap(fill = 1) {
@@ -237,6 +430,37 @@ function moveBody(body, dx, dy) {
   if (!isBlocked(body.x, body.y + dy, body.r)) body.y += dy;
 }
 
+function safeSpotNear(x, y, r = 10, seed = 0) {
+  if (!isBlocked(x, y, r)) return { x, y };
+  for (let ring = 1; ring <= 5; ring++) {
+    const radius = ring * 18;
+    for (let step = 0; step < 12; step++) {
+      const angle = seed + (step / 12) * Math.PI * 2;
+      const px = x + Math.cos(angle) * radius;
+      const py = y + Math.sin(angle) * radius;
+      if (!isBlocked(px, py, r)) return { x: px, y: py };
+    }
+  }
+  return { x: state.player.x, y: state.player.y };
+}
+
+function allyFormationPoint(index, r = 11) {
+  const p = state.player;
+  const angle = index * 2.05 + Math.PI * 0.75;
+  const radius = 42 + (index % 4) * 10;
+  return safeSpotNear(p.x + Math.cos(angle) * radius, p.y + Math.sin(angle) * radius, r, angle);
+}
+
+function placeAlliesNearPlayer() {
+  state.player.allies.forEach((ally, index) => {
+    const spot = allyFormationPoint(index, ally.r);
+    ally.x = spot.x;
+    ally.y = spot.y;
+    ally.facing = state.player.facing;
+    ally.attackCd = Math.min(ally.attackCd, 250);
+  });
+}
+
 function carveRoom(x, y, w, h) {
   for (let yy = y; yy < y + h; yy++) {
     for (let xx = x; xx < x + w; xx++) setTile(xx, yy, 0);
@@ -266,7 +490,11 @@ function makeTown() {
   for (let x = 4; x < 36; x++) setTile(x, 10, 2);
   for (let y = 8; y < 26; y++) setTile(20, y, 2);
   state.entities.push(
+    ...recruitSites.map((site) => ({ kind: "npc", x: site.x, y: site.y, r: 18, text: site.label, recruit: site.recruit, depot: site.depot })),
     ...shopStock.map((shop) => ({ kind: "npc", x: shop.x, y: shop.y, r: 15, text: shop.label, shopWeapon: shop.weapon })),
+    ...vehicleStock.map((shop) => ({ kind: "npc", x: shop.x, y: shop.y, r: 15, text: shop.label, shopVehicle: shop.vehicle })),
+    { kind: "npc", x: 645, y: 515, r: 15, text: "Armor", armorShop: true },
+    { kind: "npc", x: 775, y: 515, r: 15, text: "Ammo", ammoShop: true },
     { kind: "npc", x: 250, y: 420, r: 15, text: "Healer", heal: 20 },
     { kind: "npc", x: 410, y: 420, r: 15, text: "Trainer", skill: true },
     { kind: "potion", x: 455, y: 398, r: 12, heal: 25 },
@@ -298,6 +526,7 @@ function makeDungeon() {
   const start = rooms[0];
   state.player.x = start.cx * TILE + TILE / 2;
   state.player.y = start.cy * TILE + TILE / 2;
+  placeAlliesNearPlayer();
 
   rooms.slice(1).forEach((room, index) => {
     const cx = room.cx * TILE + TILE / 2;
@@ -323,12 +552,12 @@ function makeDungeon() {
 function spawnMonster(x, y) {
   const level = state.floor;
   const types = level === 1 ? [
-    { name: "Dungeon Rat", hp: 16, damage: 4, speed: 0.78, color: "#a8895d" },
-    { name: "Small Slime", hp: 22, damage: 5, speed: 0.62, color: "#76c96b" },
+    { name: "Dungeon Rat", hp: 16, damage: 4, speed: 0.78, color: "#aa5500" },
+    { name: "Small Slime", hp: 22, damage: 5, speed: 0.62, color: "#55ff55" },
   ] : [
-    { name: "Cave Imp", hp: 30 + level * 4, damage: 7 + level, speed: 1.05, color: "#ff5a4f" },
-    { name: "Bone Knight", hp: 58 + level * 7, damage: 11 + level, speed: 0.72, color: "#d7d7c2" },
-    { name: "Torch Eater", hp: 42 + level * 5, damage: 9 + level, speed: 1.35, color: "#b66cff" },
+    { name: "Cave Imp", hp: 30 + level * 4, damage: 7 + level, speed: 1.05, color: "#ff5555" },
+    { name: "Bone Knight", hp: 58 + level * 7, damage: 11 + level, speed: 0.72, color: "#aaaaaa" },
+    { name: "Torch Eater", hp: 42 + level * 5, damage: 9 + level, speed: 1.35, color: "#aa00aa" },
   ];
   const t = types[irand(0, Math.min(types.length - 1, Math.floor(level / 2) + 1))];
   state.entities.push({
@@ -350,9 +579,9 @@ function spawnMonster(x, y) {
 function spawnBoss(x, y) {
   const level = state.floor;
   const bosses = [
-    { name: "The Iron Butcher", color: "#f04747" },
-    { name: "Grave Engine", color: "#a8a8ff" },
-    { name: "Cinder Tyrant", color: "#ff9d42" },
+    { name: "The Iron Butcher", color: "#aa0000" },
+    { name: "Grave Engine", color: "#5555ff" },
+    { name: "Cinder Tyrant", color: "#ffff55" },
   ];
   const t = bosses[Math.floor(level / 5) % bosses.length];
   state.entities.push({
@@ -386,14 +615,16 @@ function openChest(chest) {
     log("The weapon chest hums. Skill point gained.");
     return;
   }
+  state.player.skillPoints += 1;
   const roll = Math.random();
   if (roll < 0.45) {
     const ammo = irand(18, 55);
     if (state.player.weapon.type === "ranged") state.player.weapon.reserve += ammo;
     log(`Found ${ammo} rounds.`);
   } else if (roll < 0.72) {
-    state.player.skillPoints += 1;
-    log("Found an old combat manual. Skill point gained.");
+    state.player.coins += irand(2, 5);
+    saveProgress();
+    log("Found coin scraps and a skill point.");
   } else {
     state.player.shield = Math.min(state.player.maxShield, state.player.shield + irand(10, 22));
     log("Found a shield charm.");
@@ -406,54 +637,88 @@ function usePotion(potion) {
   log(`Potion restored ${potion.heal} HP.`);
 }
 
+function getInteractable() {
+  const p = state.player;
+  let best = null;
+  let bestDist = Infinity;
+  for (const e of state.entities) {
+    if (!["npc", "chest", "weaponChest", "potion", "exit"].includes(e.kind)) continue;
+    const d = dist(p, e);
+    if (d <= p.r + e.r + 18 && d < bestDist) {
+      best = e;
+      bestDist = d;
+    }
+  }
+  return best;
+}
+
+function interactLabel(e) {
+  if (!e) return "...";
+  if (e.kind === "chest") return "OPEN";
+  if (e.kind === "weaponChest") return e.locked ? "LOCKED" : "WEAPON";
+  if (e.kind === "potion") return "POTION";
+  if (e.kind === "exit") return "ENTER";
+  if (e.shopWeapon || e.shopVehicle) return "BUY";
+  if (e.recruit) return "HIRE";
+  if (e.depot) return "ROLL";
+  if (e.armorShop) return "ARMOR";
+  if (e.ammoShop) return "AMMO";
+  if (e.heal) return "HEAL";
+  return "TALK";
+}
+
 function interact() {
   const p = state.player;
-  for (const e of state.entities) {
-    if (dist(p, e) > p.r + e.r + 18) continue;
-    if (e.kind === "npc") {
-      if (e.shopWeapon) {
-        buyOrEquipWeapon(e.shopWeapon);
-      } else if (e.heal) {
-        p.hp = Math.min(p.maxHp, p.hp + e.heal);
-        log("The healer patches you up.");
-      } else if (e.skill) {
-        if (e.used) {
-          log("The trainer has taught you all he can.");
-        } else {
-          e.used = true;
-          p.skillPoints += 1;
-          log("The trainer gives you one lesson before the descent.");
-        }
-      } else {
-        log("The town is quiet before the next run.");
-      }
+  const e = getInteractable();
+  if (!e) return;
+  if (e.kind === "npc") {
+    if (e.shopWeapon) {
+      buyOrEquipWeapon(e.shopWeapon);
+    } else if (e.shopVehicle) {
+      buyOrEquipVehicle(e.shopVehicle);
+    } else if (e.recruit) {
+      recruitAlly(e.recruit);
+    } else if (e.depot) {
+      rollVehicleDepot();
+    } else if (e.armorShop) {
+      buyArmor();
+    } else if (e.ammoShop) {
+      buyAmmo();
+    } else if (e.heal) {
+      p.hp = Math.min(p.maxHp, p.hp + e.heal);
+      log("The healer patches you up.");
+    } else if (e.skill) {
+      log("The trainer says: spend skill points as you earn them below.");
+    } else {
+      log("The town is quiet before the next run.");
+    }
+    return;
+  }
+  if (e.kind === "chest" || e.kind === "weaponChest") {
+    openChest(e);
+    return;
+  }
+  if (e.kind === "potion") {
+    usePotion(e);
+    return;
+  }
+  if (e.kind === "exit") {
+    if (state.bossAlive) {
+      log("The stairs are sealed until the boss falls.");
       return;
     }
-    if (e.kind === "chest" || e.kind === "weaponChest") {
-      openChest(e);
-      return;
-    }
-    if (e.kind === "potion") {
-      usePotion(e);
-      return;
-    }
-    if (e.kind === "exit") {
-      if (state.bossAlive) {
-        log("The stairs are sealed until the boss falls.");
-        return;
-      }
-      makeDungeon();
-      return;
-    }
+    makeDungeon();
+    return;
   }
 }
 
 function meleeAttack() {
   const p = state.player;
   if (p.attackCd > 0) return;
+  const rate = Math.max(0.35, 1 - p.skills.firerate * 0.055);
   const attack = p.weapon.type === "melee"
-    ? { damage: meleeDamage(), range: p.weapon.range, cooldown: p.weapon.cooldown }
-    : { damage: 10, range: 38, cooldown: 360 };
+    ? { damage: meleeDamage(), range: p.weapon.range, cooldown: p.weapon.cooldown * rate }
+    : { damage: 10, range: 38, cooldown: 360 * rate };
   p.attackCd = attack.cooldown;
   let hit = false;
   for (const e of state.entities) {
@@ -465,7 +730,7 @@ function meleeAttack() {
       hit = true;
     }
   }
-  burst(p.x + Math.cos(p.facing) * 24, p.y + Math.sin(p.facing) * 24, hit ? "#ffe57a" : "#8a8560", 8);
+  burst(p.x + Math.cos(p.facing) * 24, p.y + Math.sin(p.facing) * 24, hit ? "#ffff55" : "#aaaaaa", 8);
 }
 
 function shoot() {
@@ -481,7 +746,7 @@ function shoot() {
     return;
   }
   w.clip -= 1;
-  p.attackCd = w.cooldown;
+  p.attackCd = w.cooldown * Math.max(0.35, 1 - p.skills.firerate * 0.055);
   const shots = w.pellets || 1;
   for (let i = 0; i < shots; i++) {
     const spread = w.spread || 0.045;
@@ -495,7 +760,7 @@ function shoot() {
       damage: rangedDamage(w.damage),
       splash: w.splash || 0,
     });
-    burst(p.x + Math.cos(angle) * 20, p.y + Math.sin(angle) * 20, w.splash ? "#ff8d42" : "#ffd35a", 3);
+    burst(p.x + Math.cos(angle) * 20, p.y + Math.sin(angle) * 20, w.splash ? "#ff5555" : "#ffff55", 3);
   }
   if (w.clip <= 0) startReload();
 }
@@ -517,12 +782,12 @@ function finishReload() {
 
 function damageMonster(monster, amount) {
   monster.hp -= amount;
-  burst(monster.x, monster.y, "#ffdf6d", 6);
+  burst(monster.x, monster.y, "#ffff55", 6);
   if (monster.hp <= 0) {
     monster.dead = true;
     state.player.coins += monster.boss ? 8 : 1;
     saveProgress();
-    state.player.skillPoints += monster.boss ? 3 : (Math.random() < 0.22 ? 1 : 0);
+    state.player.skillPoints += monster.boss ? 5 : 1;
     if (monster.boss) {
       state.bossAlive = false;
       for (const e of state.entities) if (e.kind === "weaponChest") e.locked = false;
@@ -534,15 +799,92 @@ function damageMonster(monster, amount) {
   }
 }
 
+function nearestMonster(source, range = Infinity) {
+  let best = null;
+  let bestDist = range;
+  for (const e of state.entities) {
+    if (e.kind !== "monster" || e.dead) continue;
+    const d = dist(source, e);
+    if (d < bestDist) {
+      best = e;
+      bestDist = d;
+    }
+  }
+  return best;
+}
+
+function updateAllies(dt) {
+  const p = state.player;
+  p.allies.forEach((ally, index) => {
+    ally.attackCd = Math.max(0, ally.attackCd - dt);
+    ally.bombCd = Math.max(0, (ally.bombCd || 0) - dt);
+    const home = allyFormationPoint(index, ally.r);
+    if (dist(ally, p) > 180 || (!ally.flying && isBlocked(ally.x, ally.y, ally.r))) {
+      ally.x = home.x;
+      ally.y = home.y;
+    }
+    const d = dist(ally, home);
+    if (d > 12) {
+      const angle = Math.atan2(home.y - ally.y, home.x - ally.x);
+      if (ally.flying) {
+        ally.x += Math.cos(angle) * ally.speed;
+        ally.y += Math.sin(angle) * ally.speed;
+      } else {
+        moveBody(ally, Math.cos(angle) * ally.speed, Math.sin(angle) * ally.speed);
+      }
+    }
+    if (dist(ally, p) > 120) {
+      const spot = allyFormationPoint(index, ally.r);
+      ally.x = spot.x;
+      ally.y = spot.y;
+    }
+    const target = nearestMonster(ally, ally.range);
+    if (!target) return;
+    ally.facing = Math.atan2(target.y - ally.y, target.x - ally.x);
+    const targetDist = dist(ally, target);
+    if (ally.type === "a10" && ally.bombCd <= 0 && targetDist < ally.range) {
+      for (const e of state.entities) {
+        if (e.kind === "monster" && dist(e, target) < ally.bombSplash) damageMonster(e, ally.bombDamage);
+      }
+      burst(target.x, target.y, "#ff5555", 34);
+      ally.bombCd = ally.bombCooldown;
+      log("A-10 dropped bombs.");
+    }
+    if (ally.attackCd > 0) return;
+    ally.attackCd = ally.cooldown;
+    if (ally.type === "peasant" && targetDist < 48 + target.r) {
+      damageMonster(target, ally.damage);
+      burst(target.x, target.y, "#ffff55", 5);
+      return;
+    }
+    if (targetDist < ally.range) {
+      const explosive = (ally.type === "soldier" && Math.random() < 0.18) || ally.type === "tank";
+      state.bullets.push({
+        x: ally.x + Math.cos(ally.facing) * 14,
+        y: ally.y + Math.sin(ally.facing) * 14,
+        vx: Math.cos(ally.facing) * (ally.type === "tank" ? 6 : 10),
+        vy: Math.sin(ally.facing) * (ally.type === "tank" ? 6 : 10),
+        life: ally.range,
+        damage: explosive && !ally.vehicleAlly ? 42 : ally.damage,
+        splash: ally.splash || (explosive ? 58 : 0),
+      });
+      burst(ally.x, ally.y, explosive ? "#ff5555" : "#55ffff", 3);
+    }
+  });
+}
+
 function hurtPlayer(amount) {
   const p = state.player;
   if (p.invuln > 0) return;
   const blocking = state.keys.has("Shift");
-  let incoming = blocking ? Math.ceil(amount * (0.35 - p.skills.guard * 0.06)) : amount;
+  let incoming = blocking ? Math.ceil(amount * 0.35) : amount;
   if (blocking) {
     p.shield = Math.min(p.maxShield, p.shield + 1);
-    burst(p.x, p.y, "#6cc4ff", 5);
+    burst(p.x, p.y, "#55ffff", 5);
   }
+  const armorBlocked = Math.min(p.armor, Math.ceil(incoming * 0.65));
+  p.armor -= armorBlocked;
+  incoming -= armorBlocked;
   const absorbed = Math.min(p.shield, Math.floor(incoming * 0.45));
   p.shield -= absorbed;
   incoming -= absorbed;
@@ -565,25 +907,35 @@ function burst(x, y, color, count) {
 function update(dt) {
   if (state.gameOver) return;
   const p = state.player;
-  const speed = state.keys.has("Shift") ? 1.45 : 2.35 + state.player.skills.vigor * 0.1;
+  const speed = state.keys.has("Shift") ? 1.45 : 2.35 + p.skills.speed * 0.13 + p.vehicle.speed;
   let dx = 0;
   let dy = 0;
   if (state.keys.has("w") || state.keys.has("ArrowUp")) dy -= 1;
   if (state.keys.has("s") || state.keys.has("ArrowDown")) dy += 1;
   if (state.keys.has("a") || state.keys.has("ArrowLeft")) dx -= 1;
   if (state.keys.has("d") || state.keys.has("ArrowRight")) dx += 1;
+  if (state.mobile.enabled) {
+    dx += state.mobile.joyX;
+    dy += state.mobile.joyY;
+  }
   if (dx || dy) {
     const len = Math.hypot(dx, dy);
     moveBody(p, (dx / len) * speed, (dy / len) * speed);
+    if (state.mobile.enabled && Math.abs(state.mobile.joyX) + Math.abs(state.mobile.joyY) > 0.15) {
+      p.facing = Math.atan2(state.mobile.joyY, state.mobile.joyX);
+    }
   }
 
   const aimX = state.mouse.x + state.camera.x;
   const aimY = state.mouse.y + state.camera.y;
-  p.facing = Math.atan2(aimY - p.y, aimX - p.x);
+  if (!state.mobile.enabled || Math.abs(state.mobile.joyX) + Math.abs(state.mobile.joyY) <= 0.15) {
+    p.facing = Math.atan2(aimY - p.y, aimX - p.x);
+  }
   p.attackCd = Math.max(0, p.attackCd - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
   if (state.mouse.down) shoot();
+  updateAllies(dt);
   if (p.weapon.reloading > 0) {
     p.weapon.reloading -= dt;
     if (p.weapon.reloading <= 0) {
@@ -604,7 +956,7 @@ function update(dt) {
           for (const target of state.entities) {
             if (target.kind === "monster" && target !== e && dist(b, target) < b.splash) damageMonster(target, Math.round(b.damage * 0.65));
           }
-          burst(b.x, b.y, "#ff8d42", 22);
+          burst(b.x, b.y, "#ff5555", 22);
         }
         b.dead = true;
       }
@@ -649,6 +1001,7 @@ function draw() {
   ctx.translate(-state.camera.x, -state.camera.y);
   drawMap();
   drawEntities();
+  drawAllies();
   drawBullets();
   drawParticles();
   drawPlayer();
@@ -667,7 +1020,7 @@ function drawMap() {
       const tile = state.map[y]?.[x] ?? 1;
       ctx.fillStyle = tile === 1 ? colors.wall : state.mode === "town" && tile === 0 ? colors.townGrass : tile === 2 ? colors.townPath : colors.floor;
       ctx.fillRect(x * TILE, y * TILE, TILE, TILE);
-      ctx.strokeStyle = tile === 1 ? "#34321f" : "rgba(255,255,255,0.035)";
+      ctx.strokeStyle = tile === 1 ? "#555555" : "#00aa00";
       ctx.strokeRect(x * TILE, y * TILE, TILE, TILE);
     }
   }
@@ -677,37 +1030,74 @@ function drawEntities() {
   for (const e of state.entities) {
     if (e.kind === "monster") {
       rectSprite(e.x, e.y, e.boss ? 44 : 24, e.boss ? 44 : 24, e.color);
-      if (e.boss) drawText("BOSS", e.x - 16, e.y - 34, "#ffd35a");
+      if (e.boss) drawText("BOSS", e.x - 16, e.y - 34, "#ffff55");
       healthPip(e);
     } else if (e.kind === "chest") {
-      rectSprite(e.x, e.y, 24, 18, e.opened ? "#6b5430" : colors.chest);
-      drawText("?", e.x - 4, e.y + 5, "#1b1307");
+      rectSprite(e.x, e.y, 24, 18, e.opened ? "#555555" : colors.chest);
+      drawText("?", e.x - 4, e.y + 5, "#000000");
     } else if (e.kind === "weaponChest") {
-      rectSprite(e.x, e.y, 28, 20, e.locked ? "#59606b" : "#6cc4ff");
-      drawText(e.locked ? "L" : "W", e.x - 4, e.y + 5, "#071018");
+      rectSprite(e.x, e.y, 28, 20, e.locked ? "#555555" : "#55ffff");
+      drawText(e.locked ? "L" : "W", e.x - 4, e.y + 5, "#000000");
     } else if (e.kind === "potion") {
       rectSprite(e.x, e.y, 16, 20, colors.potion);
-      ctx.fillStyle = "#ffd5df";
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(e.x - 3, e.y - 5, 6, 8);
     } else if (e.kind === "exit") {
       ctx.fillStyle = colors.exit;
       ctx.fillRect(e.x - 20, e.y - 20, 40, 40);
-      ctx.fillStyle = "#111";
+      ctx.fillStyle = "#0000aa";
       ctx.fillRect(e.x - 11, e.y - 11, 22, 22);
     } else if (e.kind === "npc") {
-      rectSprite(e.x, e.y, 24, 28, colors.npc);
-      drawText(e.text, e.x - 30, e.y - 24, "#fff0a6");
+      rectSprite(e.x, e.y, e.recruit || e.depot ? 44 : 24, e.recruit || e.depot ? 30 : 28, colors.npc);
+      drawText(e.text, e.x - 30, e.y - 24, "#ffffff");
       if (e.shopWeapon) {
         const weapon = weaponByName[e.shopWeapon];
         const owned = state.player.ownedWeapons.has(e.shopWeapon);
-        drawText(owned ? "OWNED" : `${weapon.price} coins`, e.x - 31, e.y + 31, owned ? "#79e66d" : "#ffd35a");
+        drawText(owned ? "OWNED" : `${weapon.price} coins`, e.x - 31, e.y + 31, owned ? "#55ff55" : "#ffff55");
+      } else if (e.shopVehicle) {
+        const vehicle = vehicleByName[e.shopVehicle];
+        const owned = state.player.ownedVehicles.has(e.shopVehicle);
+        drawText(owned ? "OWNED" : `${vehicle.price} coins`, e.x - 31, e.y + 31, owned ? "#55ff55" : "#ffff55");
+      } else if (e.recruit) {
+        const spec = allyTypes[e.recruit];
+        drawText(`${spec.price} coins`, e.x - 25, e.y + 31, "#ffff55");
+      } else if (e.depot) {
+        drawText("35 roll", e.x - 22, e.y + 31, "#ff55ff");
+      } else if (e.armorShop) {
+        drawText("armor", e.x - 19, e.y + 31, "#aaaaaa");
+      } else if (e.ammoShop) {
+        drawText("ammo", e.x - 17, e.y + 31, "#55ffff");
       }
     }
   }
 }
 
+function drawAllies() {
+  for (const ally of state.player.allies) {
+    if (ally.vehicleAlly) {
+      const size = ally.type === "tank" ? 46 : ally.type === "apc" ? 42 : ally.type === "a10" ? 48 : 34;
+      rectSprite(ally.x, ally.y, size, ally.type === "a10" ? 22 : 28, ally.color);
+      ctx.fillStyle = "#000000";
+      if (ally.type === "a10") {
+        ctx.fillRect(ally.x - 30, ally.y - 3, 60, 6);
+      } else {
+        ctx.fillRect(ally.x + Math.cos(ally.facing) * 8 - 4, ally.y + Math.sin(ally.facing) * 8 - 4, 22, 8);
+      }
+    } else {
+      rectSprite(ally.x, ally.y, 20, 22, ally.color);
+    }
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(ally.x + Math.cos(ally.facing) * 8 - 2, ally.y + Math.sin(ally.facing) * 8 - 2, 4, 4);
+    const width = ally.vehicleAlly ? 34 : 20;
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(ally.x - width / 2, ally.y - 18, width, 3);
+    ctx.fillStyle = "#55ff55";
+    ctx.fillRect(ally.x - width / 2, ally.y - 18, width * Math.max(0, ally.hp / ally.maxHp), 3);
+  }
+}
+
 function drawBullets() {
-  ctx.fillStyle = "#ffe57a";
+  ctx.fillStyle = "#ffff55";
   for (const b of state.bullets) ctx.fillRect(b.x - 3, b.y - 3, 6, 6);
 }
 
@@ -723,11 +1113,24 @@ function drawParticles() {
 function drawPlayer() {
   const p = state.player;
   if (p.invuln > 0 && Math.floor(p.invuln / 80) % 2 === 0) return;
-  rectSprite(p.x, p.y, 24, 28, colors.player);
-  ctx.fillStyle = "#081014";
+  if (p.vehicle.name !== "On Foot") {
+    const heavy = p.vehicle.name.includes("Tank") || p.vehicle.name.includes("APC") || p.vehicle.name.includes("Humvee");
+    rectSprite(p.x, p.y, heavy ? 46 : 34, heavy ? 32 : 26, p.vehicle.color);
+    if (p.vehicle.name.includes("A-10")) {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(p.x - 28, p.y - 4, 56, 8);
+    } else if (heavy) {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(p.x + Math.cos(p.facing) * 10 - 4, p.y + Math.sin(p.facing) * 10 - 4, 22, 8);
+    }
+    rectSprite(p.x, p.y - 4, 18, 20, colors.player);
+  } else {
+    rectSprite(p.x, p.y, 24, 28, colors.player);
+  }
+  ctx.fillStyle = "#000000";
   ctx.fillRect(p.x + Math.cos(p.facing) * 10 - 3, p.y + Math.sin(p.facing) * 10 - 3, 6, 6);
   if (state.keys.has("Shift")) {
-    ctx.strokeStyle = "#6cc4ff";
+    ctx.strokeStyle = "#55ffff";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(p.x, p.y, 20, p.facing - 0.85, p.facing + 0.85);
@@ -736,18 +1139,18 @@ function drawPlayer() {
 }
 
 function drawOverlay() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+  ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, VIEW_W, 28);
-  ctx.fillStyle = "#f5f0d8";
+  ctx.fillStyle = "#ffffff";
   ctx.font = "16px Courier New";
   const hint = state.mode === "town"
-    ? "Town: press E at shops to buy or equip weapons with coins kept after death."
+    ? "Town: recruit allies, roll depot armor, buy gear, then enter the dungeon."
     : state.bossAlive ? "Boss floor: defeat the boss to unlock chests and stairs." : "Dungeon: survive, loot weapon chests, find green stairs, repeat forever.";
   ctx.fillText(hint, 14, 20);
   if (state.gameOver) {
-    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-    ctx.fillStyle = "#ffd35a";
+    ctx.fillStyle = "#ffff55";
     ctx.font = "42px Courier New";
     ctx.fillText("YOU WERE LOST BELOW", 230, 292);
     ctx.font = "20px Courier New";
@@ -756,25 +1159,25 @@ function drawOverlay() {
 }
 
 function rectSprite(x, y, w, h, color) {
-  ctx.fillStyle = "#070806";
+  ctx.fillStyle = "#000000";
   ctx.fillRect(Math.round(x - w / 2) + 3, Math.round(y - h / 2) + 3, w, h);
   ctx.fillStyle = color;
   ctx.fillRect(Math.round(x - w / 2), Math.round(y - h / 2), w, h);
-  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.fillStyle = color === "#ffffff" ? "#aaaaaa" : "#ffffff";
   ctx.fillRect(Math.round(x - w / 2) + 3, Math.round(y - h / 2) + 3, w - 6, 4);
 }
 
 function healthPip(e) {
   const width = e.boss ? 52 : 28;
-  ctx.fillStyle = "#0b0c0a";
+  ctx.fillStyle = "#000000";
   ctx.fillRect(e.x - width / 2, e.y - 24, width, 4);
-  ctx.fillStyle = "#ff5a4f";
+  ctx.fillStyle = "#55ff55";
   ctx.fillRect(e.x - width / 2, e.y - 24, width * Math.max(0, e.hp / e.maxHp), 4);
 }
 
 function drawText(text, x, y, color) {
   ctx.font = "12px Courier New";
-  ctx.fillStyle = "#080908";
+  ctx.fillStyle = "#000000";
   ctx.fillText(text, x + 1, y + 1);
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
@@ -783,22 +1186,33 @@ function drawText(text, x, y, color) {
 function updateUI() {
   const p = state.player;
   const w = p.weapon;
+  const nearby = getInteractable();
   ui.mode.textContent = state.mode === "town" ? "Town" : "Dungeon";
   ui.floor.textContent = state.floor;
   ui.hp.textContent = `${Math.ceil(p.hp)}/${p.maxHp}`;
   ui.shield.textContent = `${p.shield}/${p.maxShield}`;
   ui.weapon.textContent = w.name;
   ui.ammo.textContent = w.type === "ranged" ? `${w.clip}/${w.reserve}` : "-";
+  ui.vehicle.textContent = p.vehicle.name;
+  ui.armor.textContent = p.armor;
+  ui.allies.textContent = p.allies.length;
   ui.coins.textContent = p.coins;
   ui.skillPoints.textContent = p.skillPoints;
   ui.boss.textContent = state.bossAlive ? "Alive" : "-";
-  for (const name of skillNames) ui.skillLabels[name].textContent = `${p.skills[name]}/3`;
+  for (const name of skillNames) ui.skillLabels[name].textContent = `${p.skills[name]}`;
   for (const button of ui.skillButtons) {
-    const name = button.dataset.skill;
-    button.disabled = p.skillPoints <= 0 || p.skills[name] >= 3;
+    button.disabled = p.skillPoints <= 0;
   }
   ui.hpBar.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
   ui.reloadBar.style.width = w.type === "ranged" && w.reload ? `${w.reloading > 0 ? 100 - (w.reloading / w.reload) * 100 : 100}%` : "100%";
+  if (state.mobile.enabled && nearby) {
+    ui.mobileInteract.textContent = interactLabel(nearby);
+    ui.mobileInteract.classList.add("visible");
+    ui.mobileInteract.disabled = nearby.kind === "weaponChest" && nearby.locked && state.bossAlive;
+  } else {
+    ui.mobileInteract.classList.remove("visible");
+    ui.mobileInteract.disabled = false;
+  }
 }
 
 function loop(now) {
@@ -817,13 +1231,7 @@ window.addEventListener("keydown", (event) => {
   if (["1", "2", "3", "4"].includes(event.key)) spendSkill(skillNames[Number(event.key) - 1]);
   if (event.key.toLowerCase() === "r" && state.gameOver) {
     state.gameOver = false;
-    state.player.maxHp = 100;
-    state.player.hp = state.player.maxHp;
-    state.player.maxShield = 42;
-    state.player.shield = 18;
-    state.player.skillPoints = 0;
-    state.player.skills = { vigor: 0, blade: 0, guns: 0, guard: 0 };
-    state.player.weapon = cloneWeapon(weapons[0]);
+    resetRunBuild();
     makeTown();
   }
   state.keys.add(event.key.length === 1 ? event.key.toLowerCase() : event.key);
@@ -851,6 +1259,75 @@ window.addEventListener("mouseup", () => {
 for (const button of ui.skillButtons) {
   button.addEventListener("click", () => spendSkill(button.dataset.skill));
 }
+
+function setMobileMode(enabled) {
+  state.mobile.enabled = enabled;
+  document.body.classList.toggle("mobile-mode", enabled);
+  ui.mobileMode.classList.toggle("active", enabled);
+  ui.desktopMode.classList.toggle("active", !enabled);
+  if (!enabled) resetJoystick();
+}
+
+function resetJoystick() {
+  state.mobile.joyX = 0;
+  state.mobile.joyY = 0;
+  state.mobile.activePointer = null;
+  ui.joystickKnob.style.left = "42px";
+  ui.joystickKnob.style.top = "42px";
+}
+
+function updateJoystick(event) {
+  const rect = ui.joystick.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const max = rect.width / 2 - 24;
+  let dx = event.clientX - cx;
+  let dy = event.clientY - cy;
+  const len = Math.hypot(dx, dy);
+  if (len > max) {
+    dx = (dx / len) * max;
+    dy = (dy / len) * max;
+  }
+  state.mobile.joyX = dx / max;
+  state.mobile.joyY = dy / max;
+  ui.joystickKnob.style.left = `${42 + dx}px`;
+  ui.joystickKnob.style.top = `${42 + dy}px`;
+}
+
+ui.desktopMode.addEventListener("click", () => setMobileMode(false));
+ui.mobileMode.addEventListener("click", () => setMobileMode(true));
+
+ui.joystick.addEventListener("pointerdown", (event) => {
+  if (!state.mobile.enabled) return;
+  event.preventDefault();
+  state.mobile.activePointer = event.pointerId;
+  ui.joystick.setPointerCapture(event.pointerId);
+  updateJoystick(event);
+});
+
+ui.joystick.addEventListener("pointermove", (event) => {
+  if (event.pointerId !== state.mobile.activePointer) return;
+  event.preventDefault();
+  updateJoystick(event);
+});
+
+ui.joystick.addEventListener("pointerup", (event) => {
+  if (event.pointerId === state.mobile.activePointer) resetJoystick();
+});
+
+ui.joystick.addEventListener("pointercancel", (event) => {
+  if (event.pointerId === state.mobile.activePointer) resetJoystick();
+});
+
+ui.mobileAttack.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  shoot();
+});
+
+ui.mobileInteract.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  interact();
+});
 
 makeTown();
 requestAnimationFrame(loop);
