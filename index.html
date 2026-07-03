@@ -35,12 +35,12 @@
         <div><span>Floor</span><strong id="floor">0</strong></div>
         <div><span>HP</span><strong id="hp">100</strong></div>
         <div><span>Shield</span><strong id="shield">0</strong></div>
-        <div><span>Weapon</span><strong id="weapon">Rusty Sword</strong></div>
+        <div><span>Weapon</span><strong id="weapon">Pocket Knife</strong></div>
         <div><span>Ammo</span><strong id="ammo">-</strong></div>
         <div><span>Vehicle</span><strong id="vehicle">On Foot</strong></div>
         <div><span>Armor</span><strong id="armor">0</strong></div>
         <div><span>Allies</span><strong id="allies">0</strong></div>
-        <div><span>Coins</span><strong id="coins">0</strong></div>
+        <div><span>Coins</span><strong id="coins">10000</strong></div>
         <div><span>Skill Pts</span><strong id="skillPoints">0</strong></div>
         <div><span>Boss</span><strong id="boss">-</strong></div>
       </div>
@@ -51,6 +51,11 @@
       <div class="bar"><i id="reloadBar"></i></div>
 
       <div class="log" id="log" aria-live="polite"></div>
+
+      <div class="ally-roster">
+        <h2>Ally Roster</h2>
+        <div id="allyBreakdown"></div>
+      </div>
 
       <div class="skills">
         <h2>Run Upgrades</h2>
@@ -72,6 +77,17 @@
       </div>
     </aside>
   </main>
+
+  <div class="vehicle-menu" id="vehicleMenu" aria-label="Vehicle depot menu" aria-hidden="true">
+    <div class="vehicle-menu-box">
+      <h2>Vehicle Depot</h2>
+      <button type="button" data-depot-vehicle="humvee">Humvee Turret - 35 coins</button>
+      <button type="button" data-depot-vehicle="apc">APC Carrier - 35 coins</button>
+      <button type="button" data-depot-vehicle="tank">Siege Tank - 35 coins</button>
+      <button type="button" data-depot-vehicle="a10">A-10 Close Air Support - 35 coins</button>
+      <button type="button" id="closeVehicleMenu">Close</button>
+    </div>
+  </div>
 
   <script src="game.js"></script>
 </body>

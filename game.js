@@ -18,6 +18,7 @@ const ui = {
   hpBar: document.getElementById("hpBar"),
   reloadBar: document.getElementById("reloadBar"),
   log: document.getElementById("log"),
+  allyBreakdown: document.getElementById("allyBreakdown"),
   desktopMode: document.getElementById("desktopMode"),
   mobileMode: document.getElementById("mobileMode"),
   mobileControls: document.getElementById("mobileControls"),
@@ -25,6 +26,9 @@ const ui = {
   joystickKnob: document.getElementById("joystickKnob"),
   mobileAttack: document.getElementById("mobileAttack"),
   mobileInteract: document.getElementById("mobileInteract"),
+  vehicleMenu: document.getElementById("vehicleMenu"),
+  closeVehicleMenu: document.getElementById("closeVehicleMenu"),
+  depotVehicleButtons: Array.from(document.querySelectorAll("[data-depot-vehicle]")),
   skillLabels: {
     speed: document.getElementById("skill-speed"),
     firerate: document.getElementById("skill-firerate"),
@@ -46,8 +50,12 @@ const weapons = [
   { name: "Hunter Bow", type: "ranged", damage: 22, cooldown: 420, range: 420, mag: 1, ammo: 24, reload: 760, speed: 8, minFloor: 1, price: 9 },
   { name: "Flintlock Pistol", type: "ranged", damage: 44, cooldown: 620, range: 360, mag: 1, ammo: 16, reload: 1200, speed: 10, minFloor: 2, price: 14 },
   { name: "Burst SMG", type: "ranged", damage: 9, cooldown: 55, range: 340, mag: 32, ammo: 128, reload: 1250, speed: 12, minFloor: 2, price: 24 },
+  { name: "Police Revolver", type: "ranged", damage: 26, cooldown: 360, range: 360, mag: 6, ammo: 48, reload: 980, speed: 11, minFloor: 2, price: 18 },
+  { name: "Tactical Carbine", type: "ranged", damage: 18, cooldown: 130, range: 460, mag: 20, ammo: 100, reload: 1200, speed: 13, minFloor: 3, price: 34 },
   { name: "Pump Shotgun", type: "ranged", damage: 18, cooldown: 720, range: 260, mag: 5, ammo: 30, reload: 1350, speed: 9, pellets: 6, spread: 0.28, minFloor: 2, price: 20 },
   { name: "AR-15 Assault Rifle", type: "ranged", damage: 15, cooldown: 95, range: 500, mag: 24, ammo: 96, reload: 1500, speed: 13, minFloor: 3, price: 30 },
+  { name: "Minigun", type: "ranged", damage: 8, cooldown: 35, range: 520, mag: 80, ammo: 240, reload: 2600, speed: 14, spread: 0.12, minFloor: 5, price: 72 },
+  { name: "Autocannon", type: "ranged", damage: 38, cooldown: 240, range: 620, mag: 12, ammo: 72, reload: 2200, speed: 12, splash: 34, minFloor: 6, price: 86 },
   { name: "Grenade Launcher", type: "ranged", damage: 46, cooldown: 860, range: 380, mag: 4, ammo: 16, reload: 1650, speed: 6, splash: 88, minFloor: 4, price: 36 },
   { name: "Laser Carbine", type: "ranged", damage: 28, cooldown: 180, range: 560, mag: 18, ammo: 90, reload: 1100, speed: 15, minFloor: 5, price: 48 },
   { name: "Rocket Launcher", type: "ranged", damage: 72, cooldown: 980, range: 460, mag: 1, ammo: 8, reload: 1700, speed: 7, splash: 76, minFloor: 5, price: 42 },
@@ -56,7 +64,9 @@ const weapons = [
 ];
 
 const skillNames = ["speed", "firerate", "damage", "health"];
-const saveKey = "lastTorchDungeonSave";
+const BASE_COINS = 10000;
+const VEHICLE_DEPOT_COST = 35;
+const saveKey = "lastTorchDungeonSave10000Coins";
 const weaponByName = Object.fromEntries(weapons.map((weapon) => [weapon.name, weapon]));
 
 const vehicles = [
@@ -64,6 +74,8 @@ const vehicles = [
   { name: "Scrap Bike", price: 18, speed: 0.65, armor: 8, color: "#aa5500", tier: "Common" },
   { name: "Dungeon Kart", price: 32, speed: 0.4, armor: 24, color: "#5555ff", tier: "Common" },
   { name: "War Buggy", price: 55, speed: 0.85, armor: 38, color: "#aaaaaa", tier: "Uncommon" },
+  { name: "Light Tank", price: 95, speed: -0.05, armor: 160, color: "#55ff55", tier: "Rare" },
+  { name: "Battle Tank", price: 155, speed: -0.25, armor: 280, color: "#ffff55", tier: "Legendary" },
   { name: "Humvee Turret", price: 0, speed: 0.45, armor: 70, color: "#00aa00", tier: "Common" },
   { name: "APC Carrier", price: 0, speed: 0.25, armor: 120, color: "#555555", tier: "Rare" },
   { name: "Siege Tank", price: 0, speed: -0.15, armor: 220, color: "#55ff55", tier: "Legendary" },
@@ -76,8 +88,12 @@ const shopStock = [
   { label: "Bowyer", x: 355, y: 220, weapon: "Hunter Bow" },
   { label: "Gunsmith", x: 500, y: 220, weapon: "Flintlock Pistol" },
   { label: "SMG Rack", x: 645, y: 220, weapon: "Burst SMG" },
+  { label: "Revolver", x: 930, y: 220, weapon: "Police Revolver" },
+  { label: "Carbine", x: 1080, y: 220, weapon: "Tactical Carbine" },
   { label: "Shotgunner", x: 790, y: 220, weapon: "Pump Shotgun" },
   { label: "Armory", x: 575, y: 420, weapon: "AR-15 Assault Rifle" },
+  { label: "Minigun", x: 435, y: 420, weapon: "Minigun" },
+  { label: "Autocannon", x: 295, y: 420, weapon: "Autocannon" },
   { label: "Grenadier", x: 715, y: 420, weapon: "Grenade Launcher" },
   { label: "Demolition", x: 850, y: 420, weapon: "Rocket Launcher" },
   { label: "Laser Lab", x: 990, y: 420, weapon: "Laser Carbine" },
@@ -88,10 +104,14 @@ const vehicleStock = [
   { label: "Bike Shop", x: 195, y: 515, vehicle: "Scrap Bike" },
   { label: "Kart Bay", x: 345, y: 515, vehicle: "Dungeon Kart" },
   { label: "Buggy Dock", x: 500, y: 515, vehicle: "War Buggy" },
+  { label: "Light Tank", x: 950, y: 515, vehicle: "Light Tank" },
+  { label: "Battle Tank", x: 1120, y: 515, vehicle: "Battle Tank" },
 ];
 
 const allyTypes = {
   peasant: { name: "Peasant Ally", price: 5, hp: 32, speed: 1.65, damage: 9, range: 220, cooldown: 620, color: "#ffff55", weapon: "Knife/Bow" },
+  firefighter: { name: "Firefighter Survivor", price: 10, hp: 58, speed: 1.75, damage: 14, range: 250, cooldown: 520, color: "#ff5555", weapon: "Axe/Pistol" },
+  police: { name: "Police Officer", price: 14, hp: 52, speed: 1.85, damage: 17, range: 330, cooldown: 430, color: "#5555ff", weapon: "Pistol" },
   survivor: { name: "Armed Survivor", price: 12, hp: 46, speed: 1.8, damage: 18, range: 300, cooldown: 780, color: "#55ffff", weapon: "Flintlock" },
   soldier: { name: "Soldier", price: 24, hp: 70, speed: 1.9, damage: 15, range: 380, cooldown: 210, color: "#55ff55", weapon: "AR/Shotgun/RPG" },
 };
@@ -103,9 +123,22 @@ const vehicleAllyTypes = {
   a10: { name: "A-10 Close Air Support", hp: 120, speed: 2.45, damage: 10, range: 560, cooldown: 45, splash: 0, bombDamage: 110, bombSplash: 120, bombCooldown: 30000, flying: true, color: "#55ffff", r: 20, tier: "Mythic" },
 };
 
+const allyRosterRows = [
+  ["peasant", "Peasants"],
+  ["police", "Police"],
+  ["firefighter", "Firefighters"],
+  ["survivor", "Survivors"],
+  ["soldier", "Soldiers"],
+  ["humvee", "Humvees"],
+  ["apc", "APCs"],
+  ["tank", "Tanks"],
+  ["a10", "A-10s"],
+];
+
 const recruitSites = [
   { label: "Run-down Shack", x: 205, y: 95, recruit: "peasant" },
-  { label: "Police Station", x: 405, y: 95, recruit: "survivor" },
+  { label: "Old Police Station", x: 405, y: 95, recruit: "police" },
+  { label: "Fire Station", x: 1040, y: 95, recruit: "firefighter" },
   { label: "Barracks", x: 620, y: 95, recruit: "soldier" },
   { label: "Vehicle Depot", x: 830, y: 95, depot: true },
 ];
@@ -114,12 +147,12 @@ function loadSave() {
   try {
     const saved = JSON.parse(localStorage.getItem(saveKey) || "{}");
     return {
-      coins: Number.isFinite(saved.coins) ? saved.coins : 0,
+      coins: Number.isFinite(saved.coins) ? saved.coins : BASE_COINS,
       ownedWeapons: Array.isArray(saved.ownedWeapons) ? saved.ownedWeapons : ["Pocket Knife"],
       ownedVehicles: Array.isArray(saved.ownedVehicles) ? saved.ownedVehicles : ["On Foot"],
     };
   } catch {
-    return { coins: 0, ownedWeapons: ["Pocket Knife"], ownedVehicles: ["On Foot"] };
+    return { coins: BASE_COINS, ownedWeapons: ["Pocket Knife"], ownedVehicles: ["On Foot"] };
   }
 }
 
@@ -280,26 +313,29 @@ function buyOrEquipVehicle(vehicleName) {
   log(`Unlocked ${vehicle.name} for ${vehicle.price} coins.`);
 }
 
-function rollVehicleDepot() {
+function openVehicleDepotMenu() {
+  ui.vehicleMenu.classList.add("open");
+  ui.vehicleMenu.setAttribute("aria-hidden", "false");
+}
+
+function closeVehicleDepotMenu() {
+  ui.vehicleMenu.classList.remove("open");
+  ui.vehicleMenu.setAttribute("aria-hidden", "true");
+}
+
+function selectDepotVehicle(type) {
   const p = state.player;
-  const price = 35;
-  if (p.coins < price) {
-    log(`Vehicle depot roll costs ${price} coins.`);
+  const vehicle = vehicleAllyTypes[type];
+  if (!vehicle) return;
+  if (p.coins < VEHICLE_DEPOT_COST) {
+    log(`${vehicle.name} costs ${VEHICLE_DEPOT_COST} coins. You have ${p.coins}.`);
     return;
   }
-  p.coins -= price;
-  const roll = Math.random();
-  const vehicleType = roll < 0.62
-    ? "humvee"
-    : roll < 0.87
-      ? "apc"
-      : roll < 0.98
-        ? "tank"
-        : "a10";
-  const vehicle = vehicleAllyTypes[vehicleType];
+  p.coins -= VEHICLE_DEPOT_COST;
   saveProgress();
-  spawnVehicleAlly(vehicleType);
-  log(`${vehicle.tier} depot roll: ${vehicle.name} joined your squad.`);
+  spawnVehicleAlly(type);
+  closeVehicleDepotMenu();
+  log(`Vehicle Depot: ${vehicle.name} joined your squad for ${VEHICLE_DEPOT_COST} coins.`);
 }
 
 function spawnVehicleAlly(type) {
@@ -322,16 +358,10 @@ function spawnVehicleAlly(type) {
   });
 }
 
-function recruitAlly(type) {
+function addAlly(type, sourceText = "joined the run") {
   const spec = allyTypes[type];
   const p = state.player;
   if (!spec) return;
-  if (p.coins < spec.price) {
-    log(`${spec.name} costs ${spec.price} coins.`);
-    return;
-  }
-  p.coins -= spec.price;
-  saveProgress();
   const spot = allyFormationPoint(p.allies.length, 11);
   p.allies.push({
     ...spec,
@@ -344,7 +374,20 @@ function recruitAlly(type) {
     attackCd: 0,
     facing: 0,
   });
-  log(`${spec.name} joined the run.`);
+  log(`${spec.name} ${sourceText}.`);
+}
+
+function recruitAlly(type) {
+  const spec = allyTypes[type];
+  const p = state.player;
+  if (!spec) return;
+  if (p.coins < spec.price) {
+    log(`${spec.name} costs ${spec.price} coins.`);
+    return;
+  }
+  p.coins -= spec.price;
+  saveProgress();
+  addAlly(type, "joined the run");
 }
 
 function buyArmor() {
@@ -546,6 +589,26 @@ function makeDungeon() {
     if (Math.random() < 0.22) state.entities.push({ kind: "potion", x: cx + rand(-40, 40), y: cy + rand(-30, 30), r: 11, heal: irand(18, 34) });
   });
 
+  const eventRoom = rooms[Math.min(rooms.length - 1, Math.max(1, Math.floor(rooms.length / 2)))];
+  if (state.floor % 10 === 0) {
+    const types = ["peasant", "police", "firefighter", "survivor", "soldier"];
+    state.entities.push({
+      kind: "rescue",
+      x: eventRoom.cx * TILE + TILE / 2 + 34,
+      y: eventRoom.cy * TILE + TILE / 2,
+      r: 16,
+      rescueType: types[irand(0, types.length - 1)],
+    });
+  }
+  if (state.floor % 15 === 0) {
+    state.entities.push(
+      { kind: "npc", x: eventRoom.cx * TILE + TILE / 2 - 40, y: eventRoom.cy * TILE + TILE / 2 + 34, r: 15, text: "Deep Ammo", ammoShop: true },
+      { kind: "npc", x: eventRoom.cx * TILE + TILE / 2 + 40, y: eventRoom.cy * TILE + TILE / 2 + 34, r: 15, text: "Deep Armor", armorShop: true },
+      { kind: "npc", x: eventRoom.cx * TILE + TILE / 2, y: eventRoom.cy * TILE + TILE / 2 + 70, r: 15, text: "Deep Arms", shopWeapon: weapons[irand(2, weapons.length - 1)].name }
+    );
+    log("A traveling shop waits somewhere on this floor.");
+  }
+
   log(state.bossAlive ? `Floor ${state.floor}: a boss guards the stairs.` : `Floor ${state.floor}: the stairs vanish behind you.`);
 }
 
@@ -642,7 +705,7 @@ function getInteractable() {
   let best = null;
   let bestDist = Infinity;
   for (const e of state.entities) {
-    if (!["npc", "chest", "weaponChest", "potion", "exit"].includes(e.kind)) continue;
+    if (!["npc", "chest", "weaponChest", "potion", "exit", "rescue"].includes(e.kind)) continue;
     const d = dist(p, e);
     if (d <= p.r + e.r + 18 && d < bestDist) {
       best = e;
@@ -657,10 +720,11 @@ function interactLabel(e) {
   if (e.kind === "chest") return "OPEN";
   if (e.kind === "weaponChest") return e.locked ? "LOCKED" : "WEAPON";
   if (e.kind === "potion") return "POTION";
+  if (e.kind === "rescue") return "RESCUE";
   if (e.kind === "exit") return "ENTER";
   if (e.shopWeapon || e.shopVehicle) return "BUY";
   if (e.recruit) return "HIRE";
-  if (e.depot) return "ROLL";
+  if (e.depot) return "SELECT";
   if (e.armorShop) return "ARMOR";
   if (e.ammoShop) return "AMMO";
   if (e.heal) return "HEAL";
@@ -679,7 +743,7 @@ function interact() {
     } else if (e.recruit) {
       recruitAlly(e.recruit);
     } else if (e.depot) {
-      rollVehicleDepot();
+      openVehicleDepotMenu();
     } else if (e.armorShop) {
       buyArmor();
     } else if (e.ammoShop) {
@@ -700,6 +764,11 @@ function interact() {
   }
   if (e.kind === "potion") {
     usePotion(e);
+    return;
+  }
+  if (e.kind === "rescue") {
+    addAlly(e.rescueType, "was rescued");
+    e.dead = true;
     return;
   }
   if (e.kind === "exit") {
@@ -1042,6 +1111,9 @@ function drawEntities() {
       rectSprite(e.x, e.y, 16, 20, colors.potion);
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(e.x - 3, e.y - 5, 6, 8);
+    } else if (e.kind === "rescue") {
+      rectSprite(e.x, e.y, 24, 26, "#ff55ff");
+      drawText("HELP", e.x - 14, e.y - 22, "#ffffff");
     } else if (e.kind === "exit") {
       ctx.fillStyle = colors.exit;
       ctx.fillRect(e.x - 20, e.y - 20, 40, 40);
@@ -1062,7 +1134,7 @@ function drawEntities() {
         const spec = allyTypes[e.recruit];
         drawText(`${spec.price} coins`, e.x - 25, e.y + 31, "#ffff55");
       } else if (e.depot) {
-        drawText("35 roll", e.x - 22, e.y + 31, "#ff55ff");
+        drawText(`${VEHICLE_DEPOT_COST} coins`, e.x - 27, e.y + 31, "#ff55ff");
       } else if (e.armorShop) {
         drawText("armor", e.x - 19, e.y + 31, "#aaaaaa");
       } else if (e.ammoShop) {
@@ -1187,6 +1259,11 @@ function updateUI() {
   const p = state.player;
   const w = p.weapon;
   const nearby = getInteractable();
+  const allyCounts = Object.fromEntries(allyRosterRows.map(([key]) => [key, 0]));
+  for (const ally of p.allies) {
+    if (allyCounts[ally.type] === undefined) allyCounts[ally.type] = 0;
+    allyCounts[ally.type] += 1;
+  }
   ui.mode.textContent = state.mode === "town" ? "Town" : "Dungeon";
   ui.floor.textContent = state.floor;
   ui.hp.textContent = `${Math.ceil(p.hp)}/${p.maxHp}`;
@@ -1203,6 +1280,9 @@ function updateUI() {
   for (const button of ui.skillButtons) {
     button.disabled = p.skillPoints <= 0;
   }
+  ui.allyBreakdown.innerHTML = allyRosterRows
+    .map(([key, label]) => `<span>${label}</span><span>${allyCounts[key] || 0}</span>`)
+    .join("");
   ui.hpBar.style.width = `${Math.max(0, (p.hp / p.maxHp) * 100)}%`;
   ui.reloadBar.style.width = w.type === "ranged" && w.reload ? `${w.reloading > 0 ? 100 - (w.reloading / w.reload) * 100 : 100}%` : "100%";
   if (state.mobile.enabled && nearby) {
@@ -1259,6 +1339,16 @@ window.addEventListener("mouseup", () => {
 for (const button of ui.skillButtons) {
   button.addEventListener("click", () => spendSkill(button.dataset.skill));
 }
+
+for (const button of ui.depotVehicleButtons) {
+  button.addEventListener("click", () => selectDepotVehicle(button.dataset.depotVehicle));
+}
+
+ui.closeVehicleMenu.addEventListener("click", closeVehicleDepotMenu);
+
+ui.vehicleMenu.addEventListener("click", (event) => {
+  if (event.target === ui.vehicleMenu) closeVehicleDepotMenu();
+});
 
 function setMobileMode(enabled) {
   state.mobile.enabled = enabled;

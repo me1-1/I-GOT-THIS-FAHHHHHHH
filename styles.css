@@ -254,8 +254,73 @@ h2 {
   margin: 7px 0;
 }
 
-.skills {
+.skills,
+.ally-roster {
   margin-bottom: 14px;
+}
+
+.ally-roster {
+  border: 2px solid #aaaaaa;
+  background: #0000aa;
+  padding: 8px;
+}
+
+.ally-roster h2 {
+  margin-bottom: 8px;
+}
+
+#allyBreakdown {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 10px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+#allyBreakdown span:nth-child(even) {
+  color: #ffff55;
+  text-align: right;
+}
+
+.vehicle-menu {
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: #000000;
+  z-index: 5;
+}
+
+.vehicle-menu.open {
+  display: grid;
+}
+
+.vehicle-menu-box {
+  width: min(360px, calc(100vw - 28px));
+  border: 4px solid #aaaaaa;
+  background: #0000aa;
+  padding: 14px;
+  box-shadow: 0 0 0 4px #000000;
+}
+
+.vehicle-menu-box button {
+  width: 100%;
+  min-height: 40px;
+  margin: 6px 0;
+  border: 2px solid #aaaaaa;
+  background: #000000;
+  color: #ffffff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vehicle-menu-box button:hover,
+.vehicle-menu-box button:focus {
+  color: #ffff55;
+  border-color: #ffff55;
+  outline: none;
 }
 
 .skills button {
